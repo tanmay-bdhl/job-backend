@@ -11,11 +11,20 @@ const notificationsRoutes = require('./routes/notifications');
 
 const app = express();
 
-// Simple CORS configuration
-app.use(cors({
-  origin: true,
-  credentials: true
-}));
+// Explicit CORS handling for Amplify frontend and preflight requests
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'https://main.d1yr5y57cgtbi9.amplifyapp.com';
+
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
+  res.header('Vary', 'Origin');
+  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
+  res.header('Access-Control-Max-Age', '86400');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+  next();
+});
 
 // Basic middleware
 app.use(express.json());
