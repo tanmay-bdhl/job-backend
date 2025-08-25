@@ -3,9 +3,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
 
-// Initialize Google OAuth client with optional client ID from env
-const googleClientId = process.env.GOOGLE_CLIENT_ID || undefined;
-const googleClient = new OAuth2Client(googleClientId);
+const googleClient = new OAuth2Client();
 
 function validateEmail(email) {
   return /.+@.+\..+/.test(email);
@@ -59,7 +57,7 @@ exports.googleSignup = async (req, res) => {
     return res.status(400).json({ message: 'Google credential is required' });
   }
   try {
-    const ticket = await googleClient.verifyIdToken({ idToken: credential, audience: googleClientId });
+    const ticket = await googleClient.verifyIdToken({ idToken: credential });
     const payload = ticket.getPayload();
     const email = payload?.email;
     if (!email) {
@@ -118,7 +116,7 @@ exports.googleLogin = async (req, res) => {
     return res.status(400).json({ message: 'Google credential is required' });
   }
   try {
-    const ticket = await googleClient.verifyIdToken({ idToken: credential, audience: googleClientId });
+    const ticket = await googleClient.verifyIdToken({ idToken: credential });
     const payload = ticket.getPayload();
     const email = payload?.email;
     if (!email) {
