@@ -15,6 +15,12 @@ function generateToken(user) {
 
 exports.signup = async (req, res) => {
   const { email, password } = req.body;
+  console.log('[AUTH][SIGNUP][REQ]', {
+    emailPreview: typeof email === 'string' ? email.slice(0, 3) + '***' : undefined,
+    ip: req.ip,
+    ua: req.get && req.get('user-agent'),
+    time: new Date().toISOString(),
+  });
   if (!email || !password) {
     return res.status(400).json({ message: 'Email and password are required' });
   }
@@ -34,12 +40,19 @@ exports.signup = async (req, res) => {
     const token = generateToken(user);
     res.status(200).json({ user: { email: user.email, id: user._id }, token });
   } catch (err) {
+    console.error('[AUTH][SIGNUP][ERR]', { message: err.message, stack: err.stack });
     res.status(500).json({ message: 'Server error' });
   }
 };
 
 exports.googleSignup = async (req, res) => {
   const { credential } = req.body;
+  console.log('[AUTH][GOOGLE_SIGNUP][REQ]', {
+    hasCredential: Boolean(credential),
+    ip: req.ip,
+    ua: req.get && req.get('user-agent'),
+    time: new Date().toISOString(),
+  });
   if (!credential) {
     return res.status(400).json({ message: 'Google credential is required' });
   }
@@ -57,12 +70,20 @@ exports.googleSignup = async (req, res) => {
     const token = generateToken(user);
     res.status(200).json({ user: { email: user.email, id: user._id }, token });
   } catch (err) {
+    console.error('[AUTH][GOOGLE_SIGNUP][ERR]', { message: err.message, stack: err.stack });
     res.status(401).json({ message: 'Invalid Google token' });
   }
 };
 
 exports.login = async (req, res) => {
   const { email, password } = req.body;
+  console.log('[AUTH][LOGIN][REQ]', {
+    emailPreview: typeof email === 'string' ? email.slice(0, 3) + '***' : undefined,
+    hasPassword: Boolean(password),
+    ip: req.ip,
+    ua: req.get && req.get('user-agent'),
+    time: new Date().toISOString(),
+  });
   if (!email || !password) {
     return res.status(400).json({ message: 'Email and password are required' });
   }
@@ -78,12 +99,19 @@ exports.login = async (req, res) => {
     const token = generateToken(user);
     res.status(200).json({ user: { email: user.email, id: user._id }, token });
   } catch (err) {
+    console.error('[AUTH][LOGIN][ERR]', { message: err.message, stack: err.stack });
     res.status(500).json({ message: 'Server error' });
   }
 };
 
 exports.googleLogin = async (req, res) => {
   const { credential } = req.body;
+  console.log('[AUTH][GOOGLE_LOGIN][REQ]', {
+    hasCredential: Boolean(credential),
+    ip: req.ip,
+    ua: req.get && req.get('user-agent'),
+    time: new Date().toISOString(),
+  });
   if (!credential) {
     return res.status(400).json({ message: 'Google credential is required' });
   }
@@ -101,7 +129,7 @@ exports.googleLogin = async (req, res) => {
     const token = generateToken(user);
     res.status(200).json({ user: { email: user.email, id: user._id }, token });
   } catch (err) {
-    console.log(err)
+    console.error('[AUTH][GOOGLE_LOGIN][ERR]', { message: err.message, stack: err.stack });
     res.status(401).json({ message: 'Invalid Google token' });
   }
 }; 
