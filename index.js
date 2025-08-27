@@ -11,11 +11,23 @@ const notificationsRoutes = require('./routes/notifications');
 
 const app = express();
 
-// Explicit CORS handling for Amplify frontend and preflight requests
-const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'https://main.d1yr5y57cgtbi9.amplifyapp.com';
+// Explicit CORS handling for Amplify/frontend origins and preflight requests
+const DEFAULT_ORIGINS = [
+  'https://main.d1yr5y57cgtbi9.amplifyapp.com',
+  'https://twopiece.life',
+  'https://www.twopiece.life',
+];
+const parsedEnvOrigins = (process.env.ALLOWED_ORIGINS || process.env.ALLOWED_ORIGIN || '')
+  .split(',')
+  .map(o => o.trim())
+  .filter(Boolean);
+const ALLOWED_ORIGINS = [...new Set([...DEFAULT_ORIGINS, ...parsedEnvOrigins])];
 
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
+  const origin = req.headers.origin;
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+  }
   res.header('Vary', 'Origin');
   res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Content-Length, X-Requested-With');
