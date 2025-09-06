@@ -1,0 +1,12 @@
+# Minimal deps for local resume summarization graph
+torch>=2.2.0
+transformers>=4.44.0
+accelerate>=0.33.0
+langgraph>=0.2.26
+langchain-text-splitters>=0.2.2
+pypdf>=4.2.0
+tqdm>=4.66.0
+
+
+
+

@@ -16,7 +16,6 @@ const upload = multer({
   },
 });
 
-// Handle OPTIONS preflight for CORS
 router.options('/', (req, res) => {
   res.status(204).end();
 });

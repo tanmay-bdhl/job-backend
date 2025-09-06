@@ -1,15 +1,9 @@
 const { notificationQueue } = require('../config/queue');
 
-/**
- * Add notification to queue
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- */
 exports.addNotification = async (req, res) => {
   try {
     const { userId, channels, message } = req.body;
 
-    // Validate required fields
     if (!userId) {
       return res.status(400).json({
         success: false,
@@ -31,7 +25,6 @@ exports.addNotification = async (req, res) => {
       });
     }
 
-    // Add job to queue
     const job = await notificationQueue.add(
       'sendNotification',
       {
@@ -41,7 +34,6 @@ exports.addNotification = async (req, res) => {
         timestamp: new Date().toISOString(),
       },
       {
-        // Override default options if needed
         attempts: 3,
         backoff: {
           type: 'exponential',

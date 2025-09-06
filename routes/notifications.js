@@ -4,7 +4,6 @@ const { authMiddleware } = require('../utils/authMiddleware');
 
 const router = express.Router();
 
-// TEMPORARY: Remove authMiddleware for testing - REMEMBER TO ADD IT BACK IN PRODUCTION!
-router.post('/', /* authMiddleware, */ addNotification);
+router.post('/', addNotification);
 
 module.exports = router; 

@@ -9,7 +9,6 @@ exports.jobPreferences = async (req, res) => {
   const userId = req.user?.id;
   const { frequency, channel, companySize, location } = req.body;
 
-  // Validate enums
   if (!FREQUENCY_ENUM.includes(frequency)) {
     return res.status(400).json({ message: 'Invalid frequency' });
   }

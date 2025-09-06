@@ -11,7 +11,7 @@ function buildS3Client() {
   const secretAccessKey = getEnv('AWS_SECRET_ACCESS_KEY', undefined);
 
   if (!region || !accessKeyId || !secretAccessKey) {
-    return null; // Not configured; caller should handle fallback
+    return null; 
   }
 
   return new S3Client({
@@ -28,6 +28,8 @@ async function uploadBufferToS3({ buffer, contentType, bucket, keyPrefix = 'resu
   if (!bucket) {
     throw new Error('S3 bucket is required');
   }
+  
+  const region = getEnv('AWS_REGION', getEnv('AWS_DEFAULT_REGION', 'us-east-1'));
   const safeName = (filenameHint || 'file').replace(/[^a-zA-Z0-9._-]/g, '_');
   const random = crypto.randomBytes(8).toString('hex');
   const key = `${keyPrefix}${Date.now()}_${random}_${safeName}`;
@@ -39,12 +41,10 @@ async function uploadBufferToS3({ buffer, contentType, bucket, keyPrefix = 'resu
     ContentType: contentType || 'application/octet-stream',
   });
   await s3.send(cmd);
-  const url = `https://${bucket}.s3.${getEnv('AWS_REGION', getEnv('AWS_DEFAULT_REGION', ''))}.amazonaws.com/${encodeURIComponent(key)}`;
+  const url = `https://${bucket}.s3.${region}.amazonaws.com/${key}`;
   return { key, url };
 }
 
 module.exports = {
   uploadBufferToS3,
 };
-
-

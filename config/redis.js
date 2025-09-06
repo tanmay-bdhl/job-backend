@@ -1,12 +1,11 @@
 const Redis = require('ioredis');
 
-// Create Redis connection
 const redis = new Redis({
   host: process.env.REDIS_HOST || 'localhost',
   port: process.env.REDIS_PORT || 6379,
-  maxRetriesPerRequest: null, // Required by BullMQ
+  maxRetriesPerRequest: null, 
   retryDelayOnFailover: 100,
-  lazyConnect: false, // Connect immediately
+  lazyConnect: false, 
 });
 
 redis.on('connect', () => {

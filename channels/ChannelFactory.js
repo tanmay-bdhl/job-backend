@@ -1,8 +1,3 @@
-/**
- * Channel Factory
- * 
- * Centralized factory for creating and managing notification channels
- */
 
 const EmailChannel = require('./EmailChannel');
 const WhatsAppChannel = require('./WhatsAppChannel');
@@ -37,20 +32,13 @@ class ChannelFactory {
     };
   }
 
-  /**
-   * Get or create a channel instance
-   * @param {string} channelType - The type of channel (email, whatsapp, sms, push)
-   * @returns {Object} Channel instance
-   */
   getChannel(channelType) {
     const normalizedType = channelType.toLowerCase();
     
-    // Return cached instance if exists
     if (this.channels.has(normalizedType)) {
       return this.channels.get(normalizedType);
     }
 
-    // Create new channel instance
     let channel;
     switch (normalizedType) {
       case 'email':
@@ -73,30 +61,15 @@ class ChannelFactory {
         throw new Error(`Unknown channel type: ${channelType}`);
     }
 
-    // Cache and return
     this.channels.set(normalizedType, channel);
     return channel;
   }
 
-  /**
-   * Send notification through specified channel
-   * @param {string} channelType - The channel type (email, whatsapp, sms, push)
-   * @param {string} userId - The user ID
-   * @param {string} message - The message content
-   * @param {Object} options - Additional options
-   */
   async send(channelType, userId, message, options = {}) {
     const channel = this.getChannel(channelType);
     return await channel.send(userId, message, options);
   }
 
-  /**
-   * Send notification to multiple channels
-   * @param {Array} channels - Array of channel types
-   * @param {string} userId - The user ID
-   * @param {string} message - The message content
-   * @param {Object} options - Additional options
-   */
   async sendMultiple(channels, userId, message, options = {}) {
     const results = [];
     
@@ -121,9 +94,6 @@ class ChannelFactory {
     return results;
   }
 
-  /**
-   * Create SMS channel (placeholder for future implementation)
-   */
   createSMSChannel() {
     return {
       send: async (userId, message, options = {}) => {
@@ -138,9 +108,6 @@ class ChannelFactory {
     };
   }
 
-  /**
-   * Create Push notification channel (placeholder for future implementation)
-   */
   createPushChannel() {
     return {
       send: async (userId, message, options = {}) => {
@@ -155,16 +122,10 @@ class ChannelFactory {
     };
   }
 
-  /**
-   * Get list of available channels
-   */
   getAvailableChannels() {
     return ['email', 'whatsapp', 'sms', 'push'];
   }
 
-  /**
-   * Validate all channel configurations
-   */
   validateConfigurations() {
     const results = {};
     
@@ -184,22 +145,17 @@ class ChannelFactory {
       results.whatsapp = { valid: false, error: error.message };
     }
 
-    // SMS and Push are always valid in mock mode
     results.sms = { valid: true };
     results.push = { valid: true };
 
     return results;
   }
 
-  /**
-   * Reset channels (useful for testing)
-   */
   reset() {
     this.channels.clear();
   }
 }
 
-// Create singleton instance
 const channelFactory = new ChannelFactory();
 
 module.exports = channelFactory; 

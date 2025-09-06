@@ -1,5 +1,4 @@
 const nodemailer = require('nodemailer');
-// const twilio = require('twilio'); // Uncomment if using Twilio
 
 const transporter = nodemailer.createTransport({
   service: process.env.EMAIL_SERVICE,
@@ -19,14 +18,3 @@ exports.sendEmail = async (to, jobs) => {
     html,
   });
 };
-
-// Uncomment and configure if using Twilio for WhatsApp
-// const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-// exports.sendWhatsApp = async (to, jobs) => {
-//   const jobList = jobs.map(job => `${job.title} - ${job.company}`).join('\n');
-//   await client.messages.create({
-//     from: `whatsapp:${process.env.TWILIO_PHONE_NUMBER}`,
-//     to: `whatsapp:${to}`,
-//     body: `Your Job Suggestions:\n${jobList}`,
-//   });
-// }; 

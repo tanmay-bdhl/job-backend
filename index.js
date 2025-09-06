@@ -4,18 +4,24 @@ const morgan = require('morgan');
 const { connectDB } = require('./config/db');
 const cors = require('cors');
 const { initializeRedisAndQueues, shutdownRedisAndQueues, getConnectionStatus } = require('./config/init');
+const websocketService = require('./services/websocketService');
+const changeStreamService = require('./services/changeStreamService');
 const authRoutes = require('./routes/auth');
 const uploadCvRoutes = require('./routes/uploadCv');
 const jobPreferencesRoutes = require('./routes/jobPreferences');
 const notificationsRoutes = require('./routes/notifications');
+const analysisRoutes = require('./routes/analysis');
 
 const app = express();
 
-// Explicit CORS handling for Amplify/frontend origins and preflight requests
 const DEFAULT_ORIGINS = [
   'https://main.d1yr5y57cgtbi9.amplifyapp.com',
   'https://twopiece.life',
   'https://www.twopiece.life',
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:3001'
 ];
 const parsedEnvOrigins = (process.env.ALLOWED_ORIGINS || process.env.ALLOWED_ORIGIN || '')
   .split(',')
@@ -33,7 +39,6 @@ app.use((req, res, next) => {
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Content-Length, X-Requested-With');
   res.header('Access-Control-Max-Age', '86400');
   
-  // Handle preflight requests
   if (req.method === 'OPTIONS') {
     res.status(204).end();
     return;
@@ -42,17 +47,15 @@ app.use((req, res, next) => {
   next();
 });
 
-// Basic middleware
 app.use(express.json());
 app.use(morgan('dev'));
 
-// Add all routes
 app.use('/api/auth', authRoutes);
 app.use('/api/upload-cv', uploadCvRoutes);
 app.use('/api/job-preferences', jobPreferencesRoutes);
 app.use('/api/notifications', notificationsRoutes);
+app.use('/api/analysis', analysisRoutes);
 
-// Simple routes only
 app.get('/api/health', (req, res) => {
   res.json({ 
     ok: true, 
@@ -71,7 +74,6 @@ app.get('/api/status', (req, res) => {
   });
 });
 
-// Simple startup function
 async function startServer() {
   const PORT = process.env.PORT || 3000;
   
@@ -80,34 +82,54 @@ async function startServer() {
     console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`🔧 Port: ${PORT}`);
     
-    // Connect to MongoDB
-    await connectDB();
+    const mongoConnected = await connectDB();
     
-    // Initialize Redis
     await initializeRedisAndQueues();
     
-    // Start server
+    const WS_PORT = process.env.WS_PORT || 8080;
+    websocketService.initialize(WS_PORT);
+    
+    
+    if (mongoConnected) {
+      try {
+        console.log('🔍 Initializing MongoDB change streams...');
+        await changeStreamService.initialize();
+        console.log('✅ MongoDB change streams initialized successfully');
+      } catch (error) {
+        console.log('⚠️ MongoDB change streams failed to initialize:', error.message);
+        console.log('💡 This might indicate a connection or permission issue.');
+        
+        if (error.message.includes('ChangeStreamNotSupported')) {
+          console.log('🔧 Change streams are not supported on this MongoDB deployment');
+        } else if (error.message.includes('Unauthorized')) {
+          console.log('🔧 Database user may need additional permissions');
+        }
+      }
+    } else {
+      console.log('⚠️ Skipping MongoDB change streams (MongoDB not connected)');
+    }
+    
     const server = app.listen(PORT, () => {
       console.log(`🎉 Server running on port ${PORT}`);
+      console.log(`🔌 WebSocket server running on port ${WS_PORT}`);
       console.log(`🏥 Health: http://localhost:${PORT}/api/health`);
       console.log(`🔐 Auth: http://localhost:${PORT}/api/auth`);
       console.log(`📄 Upload: http://localhost:${PORT}/api/upload-cv`);
       console.log(`⚙️ Preferences: http://localhost:${PORT}/api/job-preferences`);
       console.log(`🔔 Notifications: http://localhost:${PORT}/api/notifications`);
+      console.log(`🧠 Analysis: http://localhost:${PORT}/api/analysis`);
     });
 
-    // Graceful shutdown
-    process.on('SIGTERM', async () => {
+    const gracefulShutdown = async () => {
       console.log('🛑 Shutting down...');
+      await changeStreamService.shutdown();
+      websocketService.shutdown();
       await shutdownRedisAndQueues();
       server.close(() => process.exit(0));
-    });
+    };
 
-    process.on('SIGINT', async () => {
-      console.log('🛑 Shutting down...');
-      await shutdownRedisAndQueues();
-      server.close(() => process.exit(0));
-    });
+    process.on('SIGTERM', gracefulShutdown);
+    process.on('SIGINT', gracefulShutdown);
 
   } catch (error) {
     console.error('💥 Server failed:', error.message);

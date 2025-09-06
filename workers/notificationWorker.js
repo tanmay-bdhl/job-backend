@@ -4,7 +4,6 @@ const channelFactory = require('../channels/ChannelFactory');
 
 let notificationWorker = null;
 
-// Create notification worker function
 function createNotificationWorker() {
   if (notificationWorker) {
     return notificationWorker;
@@ -25,16 +24,13 @@ function createNotificationWorker() {
         console.log(`💬 Message: ${message}`);
         console.log(`⏰ Timestamp: ${timestamp}`);
         
-        // Simulate processing time
         await new Promise(resolve => setTimeout(resolve, 500));
         
-        // Send notifications through all requested channels
         const results = await channelFactory.sendMultiple(channels, userId, message, {
           subject: 'Job Backend Notification',
           jobId: job.id
         });
         
-        // Log results
         const successfulChannels = results.filter(r => r.success).map(r => r.channel);
         const failedChannels = results.filter(r => !r.success).map(r => r.channel);
         
@@ -58,21 +54,19 @@ function createNotificationWorker() {
         
       } catch (error) {
         console.error(`❌ Error processing notification job ${job.id}:`, error.message);
-        throw error; // This will trigger a retry
+        throw error; 
       }
     },
     {
       connection: redis,
-      concurrency: 5, // Process up to 5 jobs simultaneously
+      concurrency: 5, 
     }
   );
 
-  // Event listeners
   notificationWorker.on('ready', () => {
     console.log('✅ Notification Worker: Ready to process jobs');
     console.log('📋 Available channels:', channelFactory.getAvailableChannels().join(', '));
     
-    // Validate channel configurations
     const validationResults = channelFactory.validateConfigurations();
     console.log('🔧 Channel validation:', validationResults);
   });
@@ -96,7 +90,6 @@ function createNotificationWorker() {
   return notificationWorker;
 }
 
-// Initialize worker function
 async function initializeWorker() {
   try {
     const worker = createNotificationWorker();

@@ -2,16 +2,14 @@ const cron = require('node-cron');
 const axios = require('axios');
 const User = require('../models/User');
 
-// Helper to determine if a user should be notified today
 function shouldNotifyToday(user) {
   const freq = user.jobPreferences?.frequency;
   if (!freq) return false;
   const today = new Date();
-  const day = today.getDay(); // 0=Sunday, 1=Monday, ...
+  const day = today.getDay(); 
   if (freq === 'daily') return true;
-  if (freq === 'weekly once') return day === 1; // e.g., Monday
+  if (freq === 'weekly once') return day === 1; 
   if (freq === 'once in two weeks') {
-    // Notify on even weeks, Monday
     const firstJan = new Date(today.getFullYear(), 0, 1);
     const weekNum = Math.ceil((((today - firstJan) / 86400000) + firstJan.getDay() + 1) / 7);
     return weekNum % 2 === 0 && day === 1;
@@ -22,7 +20,7 @@ function shouldNotifyToday(user) {
 
 async function notifyDjangoServer(userIds) {
   try {
-    await axios.post('http://your-django-server/notify', { userIds });
+    await axios.post('http://localhost:8080/api/resumes/notify/', { user_ids: userIds });
   } catch (err) {
     console.error('Failed to notify Django server:', err.message);
   }
@@ -43,7 +41,7 @@ function startDailyJobCheck() {
       console.error('Error in daily job check:', err.message);
     }
   }, {
-    timezone: 'Asia/Kolkata' // Set to your timezone if needed
+    timezone: 'Asia/Kolkata' 
   });
 }
 
