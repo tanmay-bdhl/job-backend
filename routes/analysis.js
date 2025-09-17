@@ -3,6 +3,7 @@ const router = express.Router();
 const { authMiddleware } = require('../utils/authMiddleware');
 const { upload } = require('../services/analysisUploadService');
 const analysisController = require('../controllers/analysisController');
+const interviewRoutes = require('./interview');
 
 const optionalAuth = (req, res, next) => {
   const authHeader = req.headers['authorization'];
@@ -26,4 +27,8 @@ router.get('/:analysisId/status', analysisController.getAnalysisStatus);
 router.get('/:analysisId/results', analysisController.getAnalysisResults);
 
 router.post('/:analysisId/cancel', analysisController.cancelAnalysis);
+
+// Mount interview routes
+router.use('/', interviewRoutes);
+
 module.exports = router;

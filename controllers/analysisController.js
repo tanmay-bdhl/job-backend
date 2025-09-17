@@ -3,37 +3,6 @@ const { uploadResumeFile, validateFile } = require('../services/analysisUploadSe
 const { triggerLambdaAnalysis } = require('../services/lambdaService');
 const websocketService = require('../services/websocketService');
 
-function transformATSData(atsData) {
-  if (!atsData) return {};
-  
-  const transformed = { ...atsData };
-  
-  if (transformed.improvements && Array.isArray(transformed.improvements)) {
-    transformed.improvements = transformed.improvements.map(improvement => ({
-      ...improvement,
-      impact_score: Math.max(1, Math.min(10, improvement.impact_score || 5))
-    }));
-  }
-  
-  return transformed;
-}
-
-function transformContentData(contentData) {
-  if (!contentData) return {};
-  
-  const transformed = { ...contentData };
-  
-  if (transformed.skill_categories && Array.isArray(transformed.skill_categories)) {
-    transformed.skill_categories = transformed.skill_categories.map(category => ({
-      ...category,
-      proficiency_levels: category.proficiency_levels?.map(level => 
-        level ? level.toLowerCase() : 'intermediate'
-      ) || []
-    }));
-  }
-  
-  return transformed;
-}
 
 async function startRealATSAnalysis(analysisId, fileUrl, fileName, userId, jobDescription = null) {
   try {
@@ -48,19 +17,38 @@ async function startRealATSAnalysis(analysisId, fileUrl, fileName, userId, jobDe
     });
 
     if (lambdaResult.success) {
-      console.log(`✅ Lambda analysis completed successfully for: ${analysisId}`, lambdaResult);
-      console.log(`📊 Processing Lambda response:`, {
+      console.log(`✅ Lambda analysis triggered successfully for: ${analysisId}`);
+      console.log(`📊 Lambda response:`, {
         hasResults: !!lambdaResult.data?.results,
         status: lambdaResult.data?.status,
         analysisId: lambdaResult.data?.analysisId
       });
       
-      await processLambdaResponse(analysisId, lambdaResult.data, userId);
+      // Update database with completed status and results
+      await AnalysisEvent.findOneAndUpdate(
+        { analysisId },
+        { 
+          status: 'completed',
+          currentStage: 'completed',
+          progress: 100,
+          results: lambdaResult.data,
+          completedAt: new Date(),
+          updatedAt: new Date()
+        }
+      );
+      
+      // Broadcast Lambda response via websocket
+      websocketService.broadcastStatusUpdate(analysisId, {
+        status: 'completed',
+        progress: 100,
+        currentStage: 'completed',
+        results: lambdaResult.data
+      });
 
-      console.log(`🎉 Analysis processing completed for: ${analysisId}`);
+      console.log(`Analysis completed and database updated for: ${analysisId}`);
       
     } else {
-      console.error(`❌ Lambda failed for: ${analysisId}`, lambdaResult.error);
+      console.error(`Lambda failed for: ${analysisId}`, lambdaResult.error);
       
       await AnalysisEvent.findOneAndUpdate(
         { analysisId },
@@ -82,7 +70,7 @@ async function startRealATSAnalysis(analysisId, fileUrl, fileName, userId, jobDe
     }
     
   } catch (error) {
-    console.error(`❌ Error in ATS analysis for ${analysisId}:`, error.message);
+    console.error(`Error in ATS analysis for ${analysisId}:`, error.message);
     
     try {
       await AnalysisEvent.findOneAndUpdate(
@@ -103,102 +91,11 @@ async function startRealATSAnalysis(analysisId, fileUrl, fileName, userId, jobDe
         error: error.message
       });
     } catch (updateError) {
-      console.error(`❌ Failed to update error status for ${analysisId}:`, updateError.message);
+      console.error(`Failed to update error status for ${analysisId}:`, updateError.message);
     }
   }
 }
 
-async function processLambdaResponse(analysisId, lambdaResponse, userId) {
-  try {
-    console.log(`[ANALYSIS] Processing Lambda response for: ${analysisId}`);
-    console.log(`[ANALYSIS] Lambda response structure:`, JSON.stringify(lambdaResponse, null, 2));
-    
-    if (lambdaResponse && lambdaResponse.ats && lambdaResponse.content) {
-      console.log(`[ANALYSIS] Processing completed analysis results for: ${analysisId}`);
-      
-      await AnalysisEvent.findOneAndUpdate(
-        { analysisId },
-        {
-          status: 'completed',
-          currentStage: 'completed',
-          progress: 100,
-          results: {
-            ats: transformATSData(lambdaResponse.ats || {}),
-            content: transformContentData(lambdaResponse.content || {}),
-            file_metadata: lambdaResponse.file_metadata,
-            processed_at: lambdaResponse.processed_at ? new Date(lambdaResponse.processed_at) : new Date(),
-            processing_time_ms: lambdaResponse.processing_time_ms || 0
-          },
-          completedAt: new Date(),
-          updatedAt: new Date()
-        }
-      );
-      
-
-
-      websocketService.broadcastStatusUpdate(analysisId, {
-        status: 'completed',
-        progress: 100,
-        currentStage: 'completed',
-        results: {
-          ats: lambdaResponse.ats,
-          content: lambdaResponse.content
-        }
-      });
-
-      console.log(`[ANALYSIS] ✅ Successfully processed completion for: ${analysisId}`);
-      
-    } else {
-      console.log(`[ANALYSIS] Invalid Lambda response structure for: ${analysisId}`);
-      console.log(`[ANALYSIS] Expected 'ats' and 'content' fields, got:`, Object.keys(lambdaResponse));
-      
-      await AnalysisEvent.findOneAndUpdate(
-        { analysisId },
-        {
-          status: 'error',
-          currentStage: 'error',
-          progress: 0,
-          error: 'Invalid analysis response format',
-          updatedAt: new Date()
-        }
-      );
-
-      websocketService.broadcastStatusUpdate(analysisId, {
-        status: 'error',
-        progress: 0,
-        currentStage: 'error',
-        error: 'Invalid analysis response format'
-      });
-
-      console.log(`[ANALYSIS] ❌ Processed error for: ${analysisId}`);
-    }
-    
-  } catch (error) {
-    console.error(`[ANALYSIS] Error processing Lambda response for ${analysisId}:`, error.message);
-    
-    try {
-      await AnalysisEvent.findOneAndUpdate(
-        { analysisId },
-        {
-          status: 'error',
-          currentStage: 'error',
-          progress: 0,
-          error: `Processing failed: ${error.message}`,
-          updatedAt: new Date()
-        }
-      );
-
-      websocketService.broadcastStatusUpdate(analysisId, {
-        status: 'error',
-        progress: 0,
-        currentStage: 'error',
-        error: error.message
-      });
-    } catch (updateError) {
-      console.error(`[ANALYSIS] Failed to update error status for ${analysisId}:`, updateError.message);
-    }
-  }
-}
 
 exports.uploadResume = async (req, res) => {
   try {

@@ -44,6 +44,54 @@ const analysisEventSchema = new mongoose.Schema({
     type: Object, 
     default: null 
   },
+  interviewQuestions: {
+    type: {
+      questions: [{
+        id: { type: String, required: true },
+        category: { type: String, required: true },
+        difficulty: { 
+          type: String, 
+          enum: ['Easy', 'Medium', 'Hard'],
+          required: true 
+        },
+        question: { type: String, required: true },
+        time_estimate: { type: String, required: true },
+        tags: [{ type: String }],
+        ai_answer: { type: String, required: true }
+      }],
+      metadata: {
+        total_questions: { type: Number, default: 0 },
+        total_time: { type: Number, default: 0 },
+        difficulty_distribution: {
+          Easy: { type: Number, default: 0 },
+          Medium: { type: Number, default: 0 },
+          Hard: { type: Number, default: 0 }
+        },
+        categories: [{ type: String }]
+      },
+      generated_at: { type: Date, default: Date.now }
+    },
+    default: null
+  },
+  interviewAnswers: {
+    type: [{
+      questionId: { type: String, required: true },
+      answer: { type: String, required: true },
+      score: {
+        overall_score: { type: Number, min: 0, max: 100, required: true },
+        breakdown: {
+          technical_accuracy: { type: Number, min: 0, max: 100, required: true },
+          completeness: { type: Number, min: 0, max: 100, required: true },
+          clarity: { type: Number, min: 0, max: 100, required: true },
+          relevance: { type: Number, min: 0, max: 100, required: true }
+        },
+        feedback: { type: String, required: true }
+      },
+      submitted_at: { type: Date, required: true },
+      scored_at: { type: Date, default: Date.now }
+    }],
+    default: []
+  },
   error: { 
     type: String, 
     default: null 
