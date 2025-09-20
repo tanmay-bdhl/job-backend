@@ -5,15 +5,13 @@ const util = require('util');
 const execAsync = util.promisify(exec);
 
 const commands = {
-  start: 'Start both server and worker',
-  stop: 'Stop both server and worker',
-  restart: 'Restart both server and worker',
+  start: 'Start the server',
+  stop: 'Stop the server',
+  restart: 'Restart the server',
   status: 'Show status of all processes',
   logs: 'Show logs from all processes',
   'start-server': 'Start only the server',
-  'start-worker': 'Start only the worker',
   'stop-server': 'Stop only the server',
-  'stop-worker': 'Stop only the worker',
   delete: 'Delete all PM2 processes',
   help: 'Show this help message'
 };
@@ -51,19 +49,19 @@ async function main() {
 
   switch (command) {
     case 'start':
-      console.log('🚀 Starting server and worker...');
+      console.log('🚀 Starting server...');
       await runCommand('pm2 start ecosystem.config.js');
       await showStatus();
       break;
 
     case 'stop':
-      console.log('🛑 Stopping server and worker...');
+      console.log('🛑 Stopping server...');
       await runCommand('pm2 stop ecosystem.config.js');
       await showStatus();
       break;
 
     case 'restart':
-      console.log('🔄 Restarting server and worker...');
+      console.log('🔄 Restarting server...');
       await runCommand('pm2 restart ecosystem.config.js');
       await showStatus();
       break;
@@ -83,21 +81,9 @@ async function main() {
       await showStatus();
       break;
 
-    case 'start-worker':
-      console.log('🔧 Starting worker only...');
-      await runCommand('pm2 start ecosystem.config.js --only notification-worker');
-      await showStatus();
-      break;
-
     case 'stop-server':
       console.log('🛑 Stopping server...');
       await runCommand('pm2 stop job-backend-server');
-      await showStatus();
-      break;
-
-    case 'stop-worker':
-      console.log('🛑 Stopping worker...');
-      await runCommand('pm2 stop notification-worker');
       await showStatus();
       break;
 

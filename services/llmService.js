@@ -136,10 +136,10 @@ Generate questions in this EXACT JSON format:
       "id": "q1",
       "category": "Technical Skills",
       "difficulty": "Medium",
-      "question": "Specific question based on their experience",
+      "question": "How do you optimize React performance?",
       "time_estimate": "3-5 minutes",
-      "tags": ["relevant", "skills", "from", "resume"],
-      "ai_answer": "Sample answer demonstrating what a good response would include"
+      "tags": ["React", "JavaScript", "Frontend", "Component Architecture"],
+      "ai_answer": "Use React.memo, useMemo, useCallback, code splitting, lazy loading, and avoid unnecessary re-renders."
     }
   ],
   "metadata": {
@@ -159,7 +159,12 @@ Requirements:
 - Include a mix of difficulty levels
 - Vary question categories
 - Provide realistic time estimates
-- Generate helpful AI answers that demonstrate good responses`;
+- Generate helpful AI answers that demonstrate good responses
+- Tags should be specific technologies, frameworks, or concepts mentioned in the question (e.g., "React", "Node.js", "Database Design", "API Development", "Microservices", "AWS", "Docker", etc.)
+- Avoid generic tags like "relevant", "skills", "from", "resume"
+- Keep questions concise and under 25 words
+- Keep AI answers concise and under 25 words
+- Focus on key points and essential information only`;
   }
 
   _createScoringPrompt(question, answer, expectedCriteria) {

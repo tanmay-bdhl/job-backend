@@ -9,7 +9,6 @@ const changeStreamService = require('./services/changeStreamService');
 const authRoutes = require('./routes/auth');
 const uploadCvRoutes = require('./routes/uploadCv');
 const jobPreferencesRoutes = require('./routes/jobPreferences');
-const notificationsRoutes = require('./routes/notifications');
 const analysisRoutes = require('./routes/analysis');
 
 const app = express();
@@ -53,7 +52,6 @@ app.use(morgan('dev'));
 app.use('/api/auth', authRoutes);
 app.use('/api/upload-cv', uploadCvRoutes);
 app.use('/api/job-preferences', jobPreferencesRoutes);
-app.use('/api/notifications', notificationsRoutes);
 app.use('/api/analysis', analysisRoutes);
 
 app.get('/api/health', (req, res) => {
