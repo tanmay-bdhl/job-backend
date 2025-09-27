@@ -2,14 +2,13 @@ require('dotenv').config();
 const express = require('express');
 const morgan = require('morgan');
 const { connectDB } = require('./config/db');
-const cors = require('cors');
 const { initializeRedisAndQueues, shutdownRedisAndQueues, getConnectionStatus } = require('./config/init');
 const websocketService = require('./services/websocketService');
 const changeStreamService = require('./services/changeStreamService');
 const authRoutes = require('./routes/auth');
-const uploadCvRoutes = require('./routes/uploadCv');
 const jobPreferencesRoutes = require('./routes/jobPreferences');
 const analysisRoutes = require('./routes/analysis');
+const rateLimitRoutes = require('./routes/rateLimit');
 
 const app = express();
 
@@ -35,7 +34,7 @@ app.use((req, res, next) => {
   }
   res.header('Vary', 'Origin');
   res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Content-Length, X-Requested-With');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Content-Length, X-Requested-With, X-Device-Fingerprint, Device-Fingerprint');
   res.header('Access-Control-Max-Age', '86400');
   
   if (req.method === 'OPTIONS') {
@@ -50,9 +49,9 @@ app.use(express.json());
 app.use(morgan('dev'));
 
 app.use('/api/auth', authRoutes);
-app.use('/api/upload-cv', uploadCvRoutes);
 app.use('/api/job-preferences', jobPreferencesRoutes);
 app.use('/api/analysis', analysisRoutes);
+app.use('/api/rate-limit', rateLimitRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ 
@@ -112,7 +111,7 @@ async function startServer() {
       console.log(`🔌 WebSocket server running on port ${WS_PORT}`);
       console.log(`🏥 Health: http://localhost:${PORT}/api/health`);
       console.log(`🔐 Auth: http://localhost:${PORT}/api/auth`);
-      console.log(`📄 Upload: http://localhost:${PORT}/api/upload-cv`);
+      console.log(`📄 Upload: http://localhost:${PORT}/api/analysis/upload`);
       console.log(`⚙️ Preferences: http://localhost:${PORT}/api/job-preferences`);
       console.log(`🔔 Notifications: http://localhost:${PORT}/api/notifications`);
       console.log(`🧠 Analysis: http://localhost:${PORT}/api/analysis`);

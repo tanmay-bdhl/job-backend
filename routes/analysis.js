@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { authMiddleware } = require('../utils/authMiddleware');
 const { upload } = require('../services/analysisUploadService');
+const { createCvUploadRateLimit } = require('../middleware/rateLimiter');
 const analysisController = require('../controllers/analysisController');
 const interviewRoutes = require('./interview');
 
@@ -16,6 +17,7 @@ const optionalAuth = (req, res, next) => {
 };
 
 router.post('/upload', 
+  createCvUploadRateLimit(),
   optionalAuth,
   upload.single('resume'),
   analysisController.uploadResume

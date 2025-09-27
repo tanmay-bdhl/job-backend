@@ -18,14 +18,6 @@ async function triggerLambdaAnalysis({ analysisId, fileUrl, fileName, userId, jo
 
   try {
     console.log(`[LAMBDA] Triggering ATS analysis for: ${analysisId}`);
-    console.log(`[LAMBDA] Endpoint: ${lambdaEndpoint}`);
-    console.log(`[LAMBDA] Payload:`, {
-      analysisId: payload.analysisId,
-      fileName: payload.fileName,
-      userId: payload.userId,
-      hasJobDescription: !!payload.jobDescription,
-      fileUrlLength: payload.fileUrl.length
-    });
 
     const response = await axios.post(lambdaEndpoint, payload, {
       headers: {
@@ -33,17 +25,8 @@ async function triggerLambdaAnalysis({ analysisId, fileUrl, fileName, userId, jo
       },
       timeout: 120000 
     });
-    console.log("lambda respose>>>>>>>", response?.data)
     if (response.status === 200) {
       console.log(`[LAMBDA] Successfully completed ATS analysis for ${analysisId}`);
-      console.log(`[LAMBDA] Response status: ${response.status}`);
-      console.log(`[LAMBDA] Response data structure:`, {
-        hasStatus: !!response.data?.status,
-        hasResults: !!response.data?.results,
-        hasError: !!response.data?.error,
-        status: response.data?.status,
-        dataKeys: Object.keys(response.data || {})
-      });
       
       return {
         success: true,

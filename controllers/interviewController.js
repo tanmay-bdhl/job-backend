@@ -5,6 +5,7 @@ const llmService = require('../services/llmService');
 exports.getInterviewQuestions = async (req, res) => {
   try {
     const { analysisId } = req.params;
+    const { refresh } = req.query;
     const userId = req.user ? req.user.id : null;
 
     // Check if analysis exists and is completed
@@ -26,14 +27,19 @@ exports.getInterviewQuestions = async (req, res) => {
       });
     }
 
-    // Check if questions already exist for this analysis
-    if (analysisEvent.interviewQuestions && analysisEvent.interviewQuestions.questions.length > 0) {
+    // Check if we should use cached questions (refresh=false or missing)
+    const shouldUseCache = refresh !== 'true';
+    
+    if (shouldUseCache && analysisEvent.interviewQuestions && analysisEvent.interviewQuestions.questions.length > 0) {
+      console.log(`📋 Returning cached questions for analysis: ${analysisId}`);
       return res.status(200).json({
         success: true,
         data: {
           analysis_id: analysisId,
           questions: analysisEvent.interviewQuestions.questions,
-          metadata: analysisEvent.interviewQuestions.metadata
+          metadata: analysisEvent.interviewQuestions.metadata,
+          generated: false,
+          refresh_requested: refresh === 'true'
         }
       });
     }
@@ -47,6 +53,13 @@ exports.getInterviewQuestions = async (req, res) => {
 
     try {
       const extractedSections = analysisEvent.results.content.extracted_sections;
+      
+      if (refresh === 'true') {
+        console.log(`🔄 Generating new questions for analysis: ${analysisId} (refresh=true)`);
+      } else {
+        console.log(`🆕 Generating questions for analysis: ${analysisId} (no cached questions found)`);
+      }
+      
       const questionData = await llmService.generateInterviewQuestions(extractedSections);
 
       // Save generated questions to AnalysisEvent collection
@@ -67,7 +80,9 @@ exports.getInterviewQuestions = async (req, res) => {
         data: {
           analysis_id: analysisId,
           questions: questionData.questions,
-          metadata: questionData.metadata
+          metadata: questionData.metadata,
+          generated: true,
+          refresh_requested: refresh === 'true'
         }
       });
     } catch (llmError) {

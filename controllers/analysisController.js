@@ -6,7 +6,6 @@ const websocketService = require('../services/websocketService');
 
 async function startRealATSAnalysis(analysisId, fileUrl, fileName, userId, jobDescription = null) {
   try {
-    console.log(`🚀 Starting real ATS analysis for: ${analysisId}`);
     
     const lambdaResult = await triggerLambdaAnalysis({
       analysisId,
@@ -18,11 +17,6 @@ async function startRealATSAnalysis(analysisId, fileUrl, fileName, userId, jobDe
 
     if (lambdaResult.success) {
       console.log(`✅ Lambda analysis triggered successfully for: ${analysisId}`);
-      console.log(`📊 Lambda response:`, {
-        hasResults: !!lambdaResult.data?.results,
-        status: lambdaResult.data?.status,
-        analysisId: lambdaResult.data?.analysisId
-      });
       
       // Update database with completed status and results
       await AnalysisEvent.findOneAndUpdate(
@@ -45,7 +39,6 @@ async function startRealATSAnalysis(analysisId, fileUrl, fileName, userId, jobDe
         results: lambdaResult.data
       });
 
-      console.log(`Analysis completed and database updated for: ${analysisId}`);
       
     } else {
       console.error(`Lambda failed for: ${analysisId}`, lambdaResult.error);
@@ -129,9 +122,6 @@ exports.uploadResume = async (req, res) => {
 
       await analysisEvent.save();
       console.log(`[ANALYSIS] Created analysis event: ${uploadResult.analysisId}`);
-      console.log(`[ANALYSIS] File URL: ${uploadResult.fileUrl}`);
-      console.log(`[ANALYSIS] User ID: ${userId || 'anonymous'}`);
-      console.log(`[ANALYSIS] Job Description: ${jobDescription ? 'provided' : 'none'}`);
       
       websocketService.broadcastStatusUpdate(uploadResult.analysisId, {
         status: 'queued',

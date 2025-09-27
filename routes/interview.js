@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { authMiddleware } = require('../utils/authMiddleware');
+const { createConditionalQuestionRefreshRateLimit } = require('../middleware/rateLimiter');
 const interviewController = require('../controllers/interviewController');
 
 // Optional authentication middleware - allows both authenticated and unauthenticated access
@@ -15,7 +16,7 @@ const optionalAuth = (req, res, next) => {
 };
 
 // GET /api/analysis/{analysisId}/interview-questions
-router.get('/:analysisId/interview-questions', optionalAuth, interviewController.getInterviewQuestions);
+router.get('/:analysisId/interview-questions', optionalAuth, createConditionalQuestionRefreshRateLimit(), interviewController.getInterviewQuestions);
 
 // POST /api/analysis/{analysisId}/questions/{questionId}/answer
 router.post('/:analysisId/questions/:questionId/answer', optionalAuth, interviewController.submitAnswer);
