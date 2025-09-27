@@ -17,7 +17,7 @@ const optionalAuth = (req, res, next) => {
 };
 
 router.post('/upload', 
-  createCvUploadRateLimit(),
+  // createCvUploadRateLimit(), // Commented out for now
   optionalAuth,
   upload.single('resume'),
   analysisController.uploadResume
