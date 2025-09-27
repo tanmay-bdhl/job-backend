@@ -4,7 +4,7 @@ const redis = require('../config/redis');
  * Rate Limiting Middleware with Sliding Window Algorithm
  * 
  * Supports:
- * - CV Upload: 4 per device per day
+ * - CV Upload: 6 per device per day
  * - Question Refresh: 2 per CV per day
  * 
  * Uses Redis with sliding window for accurate rate limiting
@@ -12,10 +12,10 @@ const redis = require('../config/redis');
 
 const RATE_LIMITS = {
   CV_UPLOAD: {
-    limit: 4,
+    limit: 6,
     windowMs: 24 * 60 * 60 * 1000, // 24 hours
     keyPrefix: 'cv_upload',
-    errorMessage: 'CV upload limit exceeded. Maximum 4 uploads per device per day.'
+    errorMessage: 'CV upload limit exceeded. Maximum 6 uploads per device per day.'
   },
   QUESTION_REFRESH: {
     limit: 2,

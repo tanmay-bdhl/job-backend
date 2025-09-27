@@ -60,7 +60,7 @@ router.get('/info', (req, res) => {
     data: {
       limits: {
         cv_upload: {
-          limit: 4,
+          limit: 6,
           window: '24 hours',
           description: 'Maximum CV uploads per device per day'
         },
