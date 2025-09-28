@@ -62,27 +62,64 @@ exports.getInterviewQuestions = async (req, res) => {
       
       const questionData = await llmService.generateInterviewQuestions(extractedSections);
 
-      // Save generated questions to AnalysisEvent collection
+      // Get existing questions or initialize empty array
+      const existingQuestions = analysisEvent.interviewQuestions?.questions || [];
+      const existingMetadata = analysisEvent.interviewQuestions?.metadata || {
+        total_questions: 0,
+        total_time: 0,
+        difficulty_distribution: { Easy: 0, Medium: 0, Hard: 0 },
+        categories: []
+      };
+
+      // Append new questions to existing ones
+      const allQuestions = [...existingQuestions, ...questionData.questions];
+      
+      // Update metadata to reflect total counts
+      const updatedMetadata = {
+        total_questions: allQuestions.length,
+        total_time: allQuestions.reduce((total, q) => {
+          const timeMatch = q.time_estimate?.match(/(\d+)/);
+          return total + (timeMatch ? parseInt(timeMatch[1]) : 0);
+        }, 0),
+        difficulty_distribution: allQuestions.reduce((dist, q) => {
+          dist[q.difficulty] = (dist[q.difficulty] || 0) + 1;
+          return dist;
+        }, { Easy: 0, Medium: 0, Hard: 0 }),
+        categories: [...new Set([...existingMetadata.categories, ...questionData.metadata.categories])]
+      };
+
+      // Save updated questions to AnalysisEvent collection
       await AnalysisEvent.findOneAndUpdate(
         { analysisId },
         { 
           interviewQuestions: {
-            questions: questionData.questions,
-            metadata: questionData.metadata,
-            generated_at: new Date()
+            questions: allQuestions,
+            metadata: updatedMetadata,
+            generated_at: new Date(),
+            last_refresh: refresh === 'true' ? new Date() : analysisEvent.interviewQuestions?.generated_at || new Date()
           },
           updatedAt: new Date()
         }
       );
 
+      // Return only new questions if refresh=true, otherwise return all questions
+      const responseQuestions = refresh === 'true' ? questionData.questions : allQuestions;
+      const responseMetadata = refresh === 'true' ? {
+        ...questionData.metadata,
+        total_questions: questionData.questions.length,
+        is_refresh: true
+      } : updatedMetadata;
+
       res.status(200).json({
         success: true,
         data: {
           analysis_id: analysisId,
-          questions: questionData.questions,
-          metadata: questionData.metadata,
+          questions: responseQuestions,
+          metadata: responseMetadata,
           generated: true,
-          refresh_requested: refresh === 'true'
+          refresh_requested: refresh === 'true',
+          new_questions_count: questionData.questions.length,
+          total_questions_count: allQuestions.length
         }
       });
     } catch (llmError) {

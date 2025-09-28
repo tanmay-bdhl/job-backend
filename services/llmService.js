@@ -47,7 +47,16 @@ class LLMService {
       // Clean up any markdown formatting if present
       const cleanedContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '');
       
-      return JSON.parse(cleanedContent);
+      const questionData = JSON.parse(cleanedContent);
+      
+      // Generate unique IDs for questions
+      const timestamp = Date.now();
+      questionData.questions = questionData.questions.map((question, index) => ({
+        ...question,
+        id: `q_${timestamp}_${index + 1}`
+      }));
+      
+      return questionData;
     } catch (error) {
       console.error(`Error generating interview questions:`, error.message);
       throw new Error(`Failed to generate interview questions: ${error.message}`);
