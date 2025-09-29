@@ -311,3 +311,106 @@ exports.getUserAnalyses = async (req, res) => {
     });
   }
 };
+
+// POST /api/analysis/:analysisId/rating
+exports.submitRating = async (req, res) => {
+  try {
+    const { analysisId } = req.params;
+    const { rating, feedback } = req.body;
+
+    // Validate analysisId format (UUID format check)
+    if (!analysisId || analysisId.length < 10) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid analysis ID format'
+      });
+    }
+
+    // Validate at least one of rating or feedback is provided
+    if (!rating && !feedback) {
+      return res.status(400).json({
+        success: false,
+        message: 'At least one of rating or feedback is required'
+      });
+    }
+
+    // Validate rating if provided
+    if (rating !== undefined) {
+      if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+        return res.status(400).json({
+          success: false,
+          message: 'Rating must be an integer between 1 and 5'
+        });
+      }
+    }
+
+    // Validate feedback if provided
+    if (feedback !== undefined) {
+      if (typeof feedback !== 'string') {
+        return res.status(400).json({
+          success: false,
+          message: 'Feedback must be a string'
+        });
+      }
+
+      // Count words (split by whitespace and filter empty strings)
+      const wordCount = feedback.trim().split(/\s+/).filter(word => word.length > 0).length;
+      if (wordCount > 25) {
+        return res.status(400).json({
+          success: false,
+          message: 'Feedback must be 25 words or less',
+          wordCount: wordCount
+        });
+      }
+    }
+
+    // Check if analysis exists
+    const analysisEvent = await AnalysisEvent.findOne({ analysisId });
+    if (!analysisEvent) {
+      return res.status(404).json({
+        success: false,
+        message: 'Analysis not found'
+      });
+    }
+
+    // Prepare rating data
+    const ratingData = {
+      submittedAt: new Date()
+    };
+
+    if (rating !== undefined) {
+      ratingData.value = rating;
+    }
+
+    if (feedback !== undefined) {
+      ratingData.feedback = feedback.trim();
+    }
+
+    // Update analysis document with rating
+    await AnalysisEvent.findOneAndUpdate(
+      { analysisId },
+      { 
+        rating: ratingData,
+        updatedAt: new Date()
+      }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'Rating submitted successfully',
+      data: {
+        analysisId,
+        rating: ratingData.value || null,
+        feedback: ratingData.feedback || null,
+        submittedAt: ratingData.submittedAt
+      }
+    });
+
+  } catch (error) {
+    console.error('[ANALYSIS][RATING][ERROR]', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error while submitting rating'
+    });
+  }
+};

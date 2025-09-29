@@ -96,6 +96,23 @@ const analysisEventSchema = new mongoose.Schema({
     type: String, 
     default: null 
   },
+  rating: {
+    value: { 
+      type: Number, 
+      min: 1, 
+      max: 5,
+      required: false
+    },
+    feedback: { 
+      type: String, 
+      maxlength: 500,
+      required: false
+    },
+    submittedAt: { 
+      type: Date, 
+      default: Date.now 
+    }
+  },
   lambdaJobId: { 
     type: String, 
     default: null 

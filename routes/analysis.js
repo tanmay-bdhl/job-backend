@@ -30,6 +30,8 @@ router.get('/:analysisId/results', analysisController.getAnalysisResults);
 
 router.post('/:analysisId/cancel', analysisController.cancelAnalysis);
 
+router.post('/:analysisId/rating', analysisController.submitRating);
+
 // Mount interview routes
 router.use('/', interviewRoutes);
 
